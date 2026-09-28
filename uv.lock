@@ -2458,6 +2458,7 @@ name = "skills-scanner"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "httpx" },
     { name = "swarms" },
 ]
 
@@ -2476,6 +2477,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", marker = "extra == 'api'", specifier = ">=0.141.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "swarms", specifier = ">=15.0.3" },
     { name = "uvicorn", marker = "extra == 'api'", specifier = ">=0.54.0" },
 ]

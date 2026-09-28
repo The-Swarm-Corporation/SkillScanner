@@ -64,7 +64,10 @@ export ANTHROPIC_API_KEY=...   # or the key for any LiteLLM-supported provider
 from skills_scanner import SkillScanner
 
 scanner = SkillScanner(model_name="claude-sonnet-5")
-report = scanner.scan("path/to/skill")
+
+report = scanner.scan("path/to/skill")                                          # directory or file
+report = scanner.scan("https://swarms.world/prompt/32d1e7b4-34da-4035-bc05-d18f8e71a2f1.md")  # URL
+report = scanner.scan("---\nname: my-skill\n---\nSkill instructions...")         # raw text
 
 print(report.verdict)                  # APPROVE / CAUTION / REJECT
 print(report.risk_assessment.score)    # 0-100
@@ -77,8 +80,9 @@ print(report.to_markdown())            # human-readable triage report
 
 | Method | Input | Use case |
 | --- | --- | --- |
-| `scan(path)` | Skill directory or single file on disk | Pre-install checks, CI |
-| `scan_files(files, name)` | `{"SKILL.md": "...", "scripts/run.sh": "..."}` | Services, uploads, marketplaces |
+| `scan(target)` | A path, an http(s) URL, or the skill text itself | The default entry point |
+| `scan_url(url)` | A raw `SKILL.md` or prompt `.md` URL, such as `https://swarms.world/prompt/<id>.md` | Marketplaces, registries |
+| `scan_files(files, name)` | `{"SKILL.md": "...", "scripts/run.sh": "..."}` | Services, uploads |
 | `scan_text(text, name)` | A single prompt or `SKILL.md` | Prompt review |
 
 Every method accepts `use_agent=` to override the instance default per call.
@@ -111,10 +115,16 @@ uv run --extra api uvicorn skills_scanner.api:app --host 0.0.0.0 --port 8000
 
 Interactive OpenAPI documentation is served at `/docs`.
 
-**Request.** Send exactly one of `content` or `files`. Requests are limited to 1,000 files and 10 MB;
-invalid requests return `422`.
+**Request.** Send exactly one of `content` (a prompt or `SKILL.md`), `files` (a multi-file skill), or
+`url` (a Markdown document to fetch). Requests are limited to 1,000 files and 10 MB, and fetched
+documents to 1 MB. URLs must resolve to public hosts. Invalid requests return `422`; unfetchable URLs
+return `400` or `502`.
 
 ```bash
+curl -X POST http://localhost:8000/v1/scan \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://swarms.world/prompt/32d1e7b4-34da-4035-bc05-d18f8e71a2f1.md"}'
+
 curl -X POST http://localhost:8000/v1/scan \
   -H "Content-Type: application/json" \
   -d '{"name": "pdf-helper", "files": {"SKILL.md": "...", "scripts/setup.sh": "..."}}'
@@ -229,6 +239,8 @@ Recommended policy: allow `APPROVE`, require human sign-off for `CAUTION`, block
 ## Security Model
 
 - **No execution.** Scanned content is read and pattern-matched, never run. Symlinks are not followed.
+- **Safe URL fetching.** URL targets must resolve to public addresses on every redirect, so scan
+  requests cannot reach internal services or cloud metadata endpoints. Downloads are size-capped and text-only.
 - **Untrusted-content isolation.** Files are sent to the agent inside randomly-tokenized boundaries,
   and the agent is instructed to treat embedded instructions as evidence rather than commands.
 - **No agent capabilities.** The review agent has no tools and a single loop; injected content can at

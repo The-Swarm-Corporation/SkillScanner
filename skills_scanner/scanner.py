@@ -8,8 +8,10 @@ from collections.abc import Iterable, Mapping
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from skills_scanner.agent import AgentReview, AgentReviewer
+from skills_scanner.fetch import fetch_text, is_url
 from skills_scanner.models import (
     Component,
     Issue,
@@ -144,12 +146,37 @@ class SkillScanner:
     def scan(
         self, target: str | os.PathLike[str], use_agent: bool | None = None
     ) -> ScanReport:
-        """Scan a skill directory or a single file on disk."""
-        root = Path(target)
+        """Scan a skill from a path, an http(s) URL, or raw skill or prompt text.
+
+        ``target`` is read as:
+
+        - a URL when it starts with ``http://`` or ``https://`` (see ``scan_url``);
+        - a path when it is path-like or names an existing file or directory;
+        - otherwise skill or prompt text (see ``scan_text``). A single-line string that
+          looks like a path but does not exist raises ``FileNotFoundError``, so a typo
+          is never scanned as text.
+        """
+        if isinstance(target, str):
+            if is_url(target):
+                return self.scan_url(target, use_agent=use_agent)
+            if not _looks_like_path(target):
+                return self.scan_text(target, use_agent=use_agent)
+        root = Path(target).expanduser()
         if not root.exists():
             raise FileNotFoundError(f"scan target does not exist: {root}")
         files, components, issues = self._collect(root)
         return self._run(root.name, str(root), files, components, issues, use_agent)
+
+    def scan_url(self, url: str, use_agent: bool | None = None) -> ScanReport:
+        """Fetch a skill or prompt document over http(s) and scan it.
+
+        Works with raw ``SKILL.md`` links and prompt endpoints that return Markdown with
+        YAML frontmatter. Hosts that resolve to private or internal addresses are refused.
+        """
+        url = url.strip()
+        text = fetch_text(url, max_bytes=self.max_file_bytes)
+        name = Path(urlsplit(url).path).name or "prompt.md"
+        return self.scan_files({name: text}, name=name, source=url, use_agent=use_agent)
 
     def scan_files(
         self,
@@ -474,10 +501,26 @@ def _is_executable(path: str, text: str) -> bool:
     return Path(path).suffix.lower() in SCRIPT_EXTENSIONS or text.startswith("#!")
 
 
+def _looks_like_path(value: str) -> bool:
+    """True for a single-line string that exists on disk or has path syntax and no spaces."""
+    if "\n" in value or len(value) > 4096:
+        return False
+    try:
+        if Path(value).expanduser().exists():
+            return True
+    except OSError:
+        return False
+    stripped = value.strip()
+    return " " not in stripped and (
+        "/" in stripped or "\\" in stripped or bool(Path(stripped).suffix)
+    )
+
+
 def _skill_name(files: Mapping[str, str]) -> str | None:
+    # The SKILL.md manifest, or the only file when a single document was scanned.
     manifest = next(
         (text for path, text in files.items() if Path(path).name.lower() == "skill.md"),
-        None,
+        next(iter(files.values())) if len(files) == 1 else None,
     )
     frontmatter = manifest and re.match(r"---\s*\n(.*?)\n---", manifest, re.DOTALL)
     name = frontmatter and re.search(

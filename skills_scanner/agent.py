@@ -173,7 +173,7 @@ class AgentReviewer:
             system_prompt=SYSTEM_PROMPT,
             model_name=self.model_name,
             max_loops=1,
-            temperature=0.0,
+            temperature=None,
             tool_schema=AgentReview,
             output_type="final",
             print_on=False,

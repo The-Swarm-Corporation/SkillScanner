@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import os
 
-from fastapi import FastAPI
+import httpx
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, model_validator
 
 from skills_scanner import ScanReport, SkillScanner
+from skills_scanner.fetch import is_url
 
 MAX_FILES = 1_000
 MAX_TOTAL_BYTES = 10_000_000
@@ -21,7 +23,9 @@ scanner = SkillScanner(model_name=os.getenv("SKILLS_SCANNER_MODEL", "claude-sonn
 
 
 class ScanRequest(BaseModel):
-    """A prompt or SKILL.md as ``content``, or a whole skill as ``files`` keyed by relative path."""
+    """Exactly one input: ``content`` (a prompt or SKILL.md), ``files`` (a whole skill keyed by
+    relative path), or ``url`` (an http(s) link to a SKILL.md or prompt ``.md`` document).
+    """
 
     name: str = Field(
         default="SKILL.md",
@@ -32,11 +36,20 @@ class ScanRequest(BaseModel):
     files: dict[str, str] | None = Field(
         default=None, description="Relative path -> file text"
     )
+    url: str | None = Field(
+        default=None,
+        max_length=2048,
+        description="http(s) URL of a SKILL.md or prompt .md document to fetch and scan",
+    )
 
     @model_validator(mode="after")
     def _one_input(self) -> ScanRequest:
-        if (self.content is None) == (self.files is None):
-            raise ValueError("provide exactly one of `content` or `files`")
+        if sum(x is not None for x in (self.content, self.files, self.url)) != 1:
+            raise ValueError("provide exactly one of `content`, `files`, or `url`")
+        if self.url is not None:
+            if not is_url(self.url):
+                raise ValueError("`url` must start with http:// or https://")
+            return self
         files = self.as_files()
         if len(files) > MAX_FILES:
             raise ValueError(f"at most {MAX_FILES} files per scan")
@@ -53,9 +66,18 @@ class ScanRequest(BaseModel):
 
 
 def _scan(request: ScanRequest, use_agent: bool) -> ScanReport:
-    return scanner.scan_files(
-        request.as_files(), name=request.name, use_agent=use_agent
-    )
+    if request.url is None:
+        return scanner.scan_files(
+            request.as_files(), name=request.name, use_agent=use_agent
+        )
+    try:
+        return scanner.scan_url(request.url, use_agent=use_agent)
+    except ValueError as exc:  # unsupported, non-public, oversized, or binary target
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=502, detail=f"could not fetch url: {exc}"
+        ) from exc
 
 
 @app.post("/v1/scan", response_model=ScanReport)
