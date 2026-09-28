@@ -84,7 +84,7 @@ EXECUTABLE_MAGIC = (
     bytes.fromhex("cafebabe"),
 )
 
-# SkillSpector scoring: per-rule diminishing returns, confidence-weighted, 1.3x for executable files.
+# Scoring: per-rule diminishing returns, confidence-weighted, 1.3x for executable files.
 DIMINISHING_WEIGHTS = (1.0, 0.5, 0.25)
 EXECUTABLE_MULTIPLIER = 1.3
 SEVERITY_BANDS = (
@@ -194,11 +194,10 @@ class SkillScanner:
         assessment: OverallAssessment | None = None
         llm_error = None
         if use_agent:
+            # Any agent failure is recorded; the static report is still valid without it.
             try:
                 review = self.reviewer.review(files, issues, risk)
-            except (
-                Exception
-            ) as exc:  # noqa: BLE001 - the static report is still valid without the agent
+            except Exception as exc:  # noqa: BLE001
                 llm_error = f"{type(exc).__name__}: {str(exc)[:500]}"
             else:
                 issues, assessment = apply_review(issues, review)
@@ -376,7 +375,7 @@ def assess(issues: list[Issue], components: list[Component]) -> RiskAssessment:
 def apply_review(
     issues: list[Issue], review: AgentReview
 ) -> tuple[list[Issue], OverallAssessment]:
-    """Merge the agent's judgments into the static issues, SkillSpector style.
+    """Merge the agent's judgments into the static issues.
 
     Confirmed issues gain the agent's explanation and may gain confidence; every other
     static issue is kept and tagged ``llm-unconfirmed``. Nothing is removed or downgraded,

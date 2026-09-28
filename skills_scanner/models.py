@@ -1,4 +1,4 @@
-"""Report schema. Mirrors NVIDIA SkillSpector's JSON report, plus the agent's overall assessment."""
+"""Report schema: static scan results plus the agent's overall assessment."""
 
 from __future__ import annotations
 
@@ -75,7 +75,7 @@ class Component(BaseModel):
 
 
 class OverallAssessment(BaseModel):
-    """The agent's semantic verdict (SkillSpector's overall assessment plus the Skill Inspector rubric)."""
+    """The agent's semantic verdict and triage narrative."""
 
     verdict: Verdict = Field(
         description="APPROVE, CAUTION, or REJECT per the verdict rubric"
@@ -137,11 +137,11 @@ class ScanReport(BaseModel):
         return self.model_dump_json(indent=indent)
 
     def to_markdown(self) -> str:
-        """Render the Skill Inspector triage report."""
+        """Render the SkillScanner triage report."""
         risk = self.risk_assessment
         review = self.overall_assessment
         lines = [
-            f"## 🛡️ Skill Inspector: `{self.skill.name}`",
+            f"## 🛡️ SkillScanner: `{self.skill.name}`",
             "",
             f"**Source:** {self.skill.source}",
         ]

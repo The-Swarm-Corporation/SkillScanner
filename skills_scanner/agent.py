@@ -11,7 +11,7 @@ from swarms import Agent
 
 from skills_scanner.models import Issue, OverallAssessment, RiskAssessment, Severity
 
-SYSTEM_PROMPT = """You are Skill Inspector, a security reviewer deciding whether an AI agent skill or prompt is \
+SYSTEM_PROMPT = """You are SkillScanner, a security reviewer deciding whether an AI agent skill or prompt is \
 safe to install, keep installed, or submit for review. A skill is a folder of instructions (usually SKILL.md) \
 plus optional scripts that an AI coding agent loads and follows with the user's privileges.
 
@@ -60,8 +60,8 @@ def _normalize_confidence(value: Any) -> float:
     return min(1.0, max(0.0, value))
 
 
-class MetaAnalyzerFinding(BaseModel):
-    """The agent's judgment of one static issue (SkillSpector meta-analyzer shape)."""
+class IssueJudgment(BaseModel):
+    """The agent's judgment of one static issue."""
 
     finding_id: str = Field(description="finding_id of the static issue being judged")
     pattern_id: str = Field(description="Rule ID of the static issue, e.g. PI001")
@@ -138,7 +138,7 @@ class SemanticFinding(BaseModel):
 class AgentReview(BaseModel):
     """Structured output of the semantic review."""
 
-    findings: list[MetaAnalyzerFinding] = Field(
+    findings: list[IssueJudgment] = Field(
         default_factory=list, description="One judgment per static issue"
     )
     semantic_findings: list[SemanticFinding] = Field(
@@ -168,7 +168,7 @@ class AgentReviewer:
         self, files: dict[str, str], issues: list[Issue], risk: RiskAssessment
     ) -> AgentReview:
         agent = Agent(
-            agent_name="skill-inspector",
+            agent_name="skills-scanner",
             agent_description="Reviews AI agent skills and prompts for security threats.",
             system_prompt=SYSTEM_PROMPT,
             model_name=self.model_name,
