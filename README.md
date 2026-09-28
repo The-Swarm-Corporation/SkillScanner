@@ -1,6 +1,6 @@
-<div align="center">
-
 # SkillScanner
+
+![SkillScanner logo](assets/logo.svg)
 
 **Security auditing for AI agent skills and prompts, before they reach your agents.**
 
@@ -13,15 +13,6 @@ and supply-chain risk in Claude Code, Codex, and MCP skills, then get an agent-r
 [![License](https://img.shields.io/badge/License-Apache%202.0-green?style=for-the-badge)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](#deployment)
 [![GitHub Stars](https://img.shields.io/github/stars/The-Swarm-Corporation/SkillScanner?style=for-the-badge&logo=github)](https://github.com/The-Swarm-Corporation/SkillScanner)
-
-[![Website](https://img.shields.io/badge/Website-swarms.ai-000000?style=for-the-badge)](https://swarms.ai)
-[![Twitter](https://img.shields.io/badge/Twitter-Follow-1DA1F2?style=for-the-badge&logo=x&logoColor=white)](https://twitter.com/swarms_corp)
-[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/EamjgSaEQf)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Follow-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/company/swarms-corp/)
-[![YouTube](https://img.shields.io/badge/YouTube-Subscribe-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@kyegomez3242)
-[![Telegram](https://img.shields.io/badge/Telegram-Join-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/swarmsgroupchat)
-
-</div>
 
 ---
 
