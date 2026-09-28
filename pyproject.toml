@@ -1,0 +1,26 @@
+[project]
+name = "skills-scanner"
+version = "0.1.0"
+description = "Audit agent skills and prompts for malicious links, prompt injection, data exfiltration, and more."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+dependencies = [
+    "swarms>=15.0.3",
+]
+
+[project.optional-dependencies]
+api = [
+    "fastapi>=0.141.1",
+    "uvicorn>=0.54.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]

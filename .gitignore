@@ -17,6 +17,7 @@ eggs/
 lib/
 lib64/
 parts/
+agent_workspace/
 sdist/
 var/
 wheels/
@@ -216,3 +217,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# swarms runtime workspace
+agent_workspace/
