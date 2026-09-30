@@ -36,20 +36,6 @@ every skill and prompt before installation, in CI, or behind an internal marketp
 | Graceful degradation | If the model is unreachable, the static report is still returned with the failure recorded in `metadata.llm_error`. |
 | Three integration surfaces | Python class API, REST API (FastAPI), and a Docker image. |
 
-## Architecture
-
-```mermaid
-flowchart LR
-    A[Skill directory, files, or prompt] --> B[Ingest<br/>size caps, symlink checks, binary detection]
-    B --> C[Static analysis<br/>rules, links, hidden Unicode, base64]
-    C --> D[Risk score<br/>0-100]
-    D --> E{Agent review<br/>enabled?}
-    E -- no --> G[Report]
-    E -- yes --> F[Swarms agent<br/>structured output]
-    F --> H[Merge<br/>confirm, never remove]
-    H --> I[Rescore + verdict]
-    I --> G
-```
 
 ## Quick Start
 
@@ -73,6 +59,16 @@ print(report.verdict)                  # APPROVE / CAUTION / REJECT
 print(report.risk_assessment.score)    # 0-100
 print(report.to_markdown())            # human-readable triage report
 ```
+
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A[Input] --> B[Analyze & Score]
+    B --> C[Review & Report]
+```
+
 
 ## Python API
 
